@@ -1,0 +1,4 @@
+<launch>
+  <node name = "imu_publisher"	pkg="rc_sense"	type="imu_publisher.py" />
+
+</launch>
