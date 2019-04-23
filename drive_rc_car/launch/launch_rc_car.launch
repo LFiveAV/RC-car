@@ -1,0 +1,13 @@
+<launch>
+
+  <node name = "imu_data_publisher"	pkg="rc_sense"	type="imu_publisher.py" />
+
+  <node name = "imu_speed_publisher"	pkg="rc_sense"	type="imu_speed.py" />
+
+  <node name = "vehicle_controller"	pkg="drive_rc_car"	type="vehicle_control.py" />
+
+  <node name = "rc_p_controller"	pkg="drive_rc_car"	type="rc_controller.py" /> 
+
+  <node name = "r_c_test"	        pkg="drive_rc_car"	type="vehicle_ctrl.py" />
+
+</launch>
