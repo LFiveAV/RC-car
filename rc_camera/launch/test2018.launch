@@ -1,0 +1,4 @@
+<launch>
+  <node name = "camera_publisher"   pkg="rc_camera"	type="vehicle_ctrl.py" />
+
+</launch>
