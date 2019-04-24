@@ -33,5 +33,5 @@ class DC_Motor(object):
 
     def set_pwm(self, pwm_val):
         pwm = self.max_min_pwm(pwm_val)
-        self.pca.set_pwm(self.channel, 0, pwm)
+        self.pca.set_pwm(self.channel, 0, pwm) # Comment the meaning of the input
         self.set_current_pwm(pwm)
