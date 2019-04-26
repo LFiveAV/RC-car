@@ -1,0 +1,7 @@
+<launch>
+<!-- remote controller node-->
+  <node name = "remote_controller_node"	pkg="drive_rc_car"	type="remote_controller.py" />
+<!-- vehicle controller node-->
+  <node name = "vehicle_controller"	pkg="drive_rc_car"	type="vehicle_control.py" /> 
+
+</launch>
