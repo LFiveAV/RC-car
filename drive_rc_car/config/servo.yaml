@@ -1,0 +1,3 @@
+pwm_min: 205
+pwm_max: 410
+pwm_midpoint: 308
