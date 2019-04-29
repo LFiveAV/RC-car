@@ -1,5 +1,0 @@
-pwm_min: 220
-pwm_max: 410
-pwm_midpoint: 315
-pwm_midrange_min: 215
-pwm_midrange_max: 420
