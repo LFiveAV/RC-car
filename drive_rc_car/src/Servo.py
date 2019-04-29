@@ -5,19 +5,25 @@ Created on Tue May 22 11:52:10 2018
 
 @author: nvidia
 """
-
+import yaml
 
 CHANNEL = 0
 
 
 class ServoMotor(object):
-    def __init__(self, pca_obj, ch=CHANNEL):
+    def __init__(self, pca_obj):
+        self.import_settings()
         self.pca = pca_obj
-        self.channel = ch
-        self.pwm_min = 205
-        self.pwm_max = 410
-        self.pwm_midpoint = 308
         self.current_pwm = 0
+
+    def import_settings(self):
+        path = "../config/settings.yaml"
+        settings = yaml.safe_load(open(path))
+        servo_pwm = settings['servo']
+        self.channel = servo_pwm['channel']
+        self.pwm_min = servo_pwm['pwm_min']
+        self.pwm_max = servo_pwm['pwm_max']
+        self.pwm_midpoint = servo_pwm['pwm_midpoint']
 
     def set_current_pwm(self, new_pwm):
         self.current_pwm = new_pwm
@@ -27,12 +33,7 @@ class ServoMotor(object):
         return self.current_pwm
 
     def max_min_pwm(self, pwm_val):
-        if pwm_val < self.pwm_min:
-            return self.pwm_min
-        elif pwm_val > self.pwm_max:
-            return self.pwm_max
-        else:
-            return pwm_val
+        return max(self.pwm_min,min(pwm_val,self.pwm_max))
 
     def set_pwm(self, pwm_val):
         pwm = self.max_min_pwm(pwm_val)

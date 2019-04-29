@@ -5,17 +5,25 @@ Created on Tue May 22 11:52:10 2018
 
 @author: nvidia
 """
-CHANNEL = 1
-
+import yaml
 
 class DC_Motor(object):
-    def __init__(self, pca_obj, ch=CHANNEL):
+    def __init__(self, pca_obj):
+        self.import_settings()
         self.pca = pca_obj
-        self.channel = ch
-        self.pwm_min = 220
-        self.pwm_max = 410
-        self.pwm_midpoint = 315
         self.current_pwm = 0
+
+
+    def import_settings(self):
+        path = "../config/settings.yaml"
+        settings = yaml.safe_load(open(path))
+        dc_motor_pwm = settings['dc_motor']
+        self.channel = dc_motor_pwm ['channel']
+        self.pwm_min = dc_motor_pwm['pwm_min']
+        self.pwm_max = dc_motor_pwm['pwm_max']
+        self.pwm_midpoint = dc_motor_pwm['pwm_midpoint']
+        self.pwm_midrange_max = dc_motor_pwm['pwm_midrange_max']
+        self.pwm_midrange_min = dc_motor_pwm['pwm_midrange_min']
 
     def set_current_pwm(self, new_pwm):
         self.current_pwm = new_pwm
@@ -24,12 +32,7 @@ class DC_Motor(object):
         return self.current_pwm
 
     def max_min_pwm(self, pwm_val):
-        if pwm_val < self.pwm_min:
-            return self.pwm_min
-        elif pwm_val > self.pwm_max:
-            return self.pwm_max
-        else:
-            return pwm_val
+        return max(self.pwm_min,min(pwm_val,self.pwm_max))
 
     def set_pwm(self, pwm_val):
         pwm = self.max_min_pwm(pwm_val)
