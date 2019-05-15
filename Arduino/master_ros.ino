@@ -1,17 +1,32 @@
 #include <SoftwareSerial.h>
 #include <ros.h>
-#include<std_msgs/String.h> // TODO: change msg type
+#include <std_msgs/Float32MultiArray.h>
 
 SoftwareSerial portOne(10, 11); // TODO: change pins
 
-ros::NodeHandle nh;
-std_msgs::String ultra_msgs; // TODO: change msg type
-ros::Publisher ultrasonic("ultrasonic", &ultra_msgs);
+// PWM-control
+float pwm1 = 0; 
+float pwm2 = 0;
 
+ROS_CALLBACK(pwm_callback,std_msgs::Float32MultiArray){
+  pwm1=msg.data[0];
+  pwm2=msg.data[1];
+}
+
+// ROS
+ros::NodeHandle nh;
+std_msgs::Float32MultiArray ultra_msgs; 
+ros::Publisher ultrasonic("ultrasonic", &ultra_msgs);
+ros::Subscriber pwm("pwm",&msg,&pwm_callback);
+boolean something_to_publish = false;
+
+// Ultrasonic 
 int num_sensors = 5;  // atm only 5 works :(
 const byte num_chars = 32;
 char recieved_data[num_chars];
 int recieved_distanace[num_sensors] = {};
+
+// TX/RX
 boolean newData = false;
 char startMarker = '<';
 char endMarker = '>';
@@ -19,21 +34,33 @@ char delim[1] = ",";
 
 void setup() {
   Serial.begin(9600);
-
   nh.initNode();
   nh.advertise(ultrasonic);
+  nh.subscribe(pwm);
 
 }
 
 void loop() {
+  motor_control();
   get_data();
   if (newData == true) {
     parseData();
     //showData();
     newData = false;
+    something_to_publish = true;
   }
-  publish_data();
+  if (something_to_publish == true) {
+    publish_data();
+    
+    something_to_publish = false;
+  }
   nh.spinOnce();
+  delay(10);
+}
+
+void motor_control(){
+  Serial.print("PWM1: ");
+  Serial.println(pwm1);
 }
 
 void get_data() {
@@ -78,11 +105,8 @@ void parseData() {
 }
 
 void publish_data() {
-  ultra_msgs.sensor1 = recieved_distanace[0];
-  ultra_msgs.sensor2 = recieved_distanace[1];
-  ultra_msgs.sensor3 = recieved_distanace[2];
-  ultra_msgs.sensor4 = recieved_distanace[3];
-  ultra_msgs.sensor5 = recieved_distanace[4];
+  ultra_msgs.recieved_distanace = recieved_distanace;
+  ultra_msgs.recieved_distanace_length = 5;
   ultrasonic.publish( &ultra_msgs);
 }
 
@@ -97,5 +121,4 @@ void showData() {
   Serial.println(recieved_distanace[3]);
   Serial.print("Distance 5: ");
   Serial.println(recieved_distanace[4]);
-
 }
