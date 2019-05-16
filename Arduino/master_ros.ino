@@ -1,47 +1,48 @@
 #include <SoftwareSerial.h>
 #include <ros.h>
-#include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 
-SoftwareSerial portOne(10, 11); // TODO: change pins
+//SoftwareSerial portOne(10, 11); // TODO: change pins
 
 // PWM-control
 float pwm1 = 0; 
 float pwm2 = 0;
 
-ROS_CALLBACK(pwm_callback,std_msgs::Float32MultiArray){
+void pwm_callback(const std_msgs::Int32MultiArray &msg){
   pwm1=msg.data[0];
   pwm2=msg.data[1];
 }
 
 // ROS
 ros::NodeHandle nh;
-std_msgs::Float32MultiArray ultra_msgs; 
+std_msgs::Int32MultiArray ultra_msgs; 
 ros::Publisher ultrasonic("ultrasonic", &ultra_msgs);
-ros::Subscriber pwm("pwm",&msg,&pwm_callback);
+ros::Subscriber<std_msgs::Int32MultiArray> pwm("pwm",&pwm_callback);
 boolean something_to_publish = false;
 
 // Ultrasonic 
 int num_sensors = 5;  // atm only 5 works :(
 const byte num_chars = 32;
 char recieved_data[num_chars];
-int recieved_distanace[num_sensors] = {};
+long int recieved_distanace[5];
 
 // TX/RX
 boolean newData = false;
 char startMarker = '<';
 char endMarker = '>';
-char delim[1] = ",";
+char delim[] = ",";
 
 void setup() {
   Serial.begin(9600);
   nh.initNode();
   nh.advertise(ultrasonic);
   nh.subscribe(pwm);
+  //Serial.begin("Hk");
 
 }
 
 void loop() {
-  motor_control();
+  //motor_control();
   get_data();
   if (newData == true) {
     parseData();
@@ -105,8 +106,8 @@ void parseData() {
 }
 
 void publish_data() {
-  ultra_msgs.recieved_distanace = recieved_distanace;
-  ultra_msgs.recieved_distanace_length = 5;
+  ultra_msgs.data = recieved_distanace;
+  ultra_msgs.data_length = 5;
   ultrasonic.publish( &ultra_msgs);
 }
 
