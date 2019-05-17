@@ -1,23 +1,29 @@
 #include <SoftwareSerial.h>
 #include <ros.h>
-#include <std_msgs/Int32MultiArray.h>
+#include <custom_messages/ultrasonic.h>
+#include <custom_messages/dc_pwm.h>
+// ? ^
 
-//SoftwareSerial portOne(10, 11); // TODO: change pins
+SoftwareSerial portOne(10, 11); // TODO: change pins
 
 // PWM-control
-float pwm1 = 0; 
-float pwm2 = 0;
+int pwm = 0; 
+String mode = "standstill";
+String prev_mode = "standstill";
+int forward_pin = 6; // change pin number
+int reverse_pin = 7; // change pin number
+int pwm_pin = 8; // change pin number
 
-void pwm_callback(const std_msgs::Int32MultiArray &msg){
-  pwm1=msg.data[0];
-  pwm2=msg.data[1];
+void pwm_callback(const custom_messages::dc_pwm &msg){
+  pwm=msg.pwm;
+  mode=msg.mode;
 }
 
 // ROS
 ros::NodeHandle nh;
-std_msgs::Int32MultiArray ultra_msgs; 
+custom_messages::ultrasonic ultra_msgs; 
 ros::Publisher ultrasonic("ultrasonic", &ultra_msgs);
-ros::Subscriber<std_msgs::Int32MultiArray> pwm("pwm",&pwm_callback);
+ros::Subscriber<custom_messages::dc_pwm> pwm_sub("pwm",&pwm_callback);
 boolean something_to_publish = false;
 
 // Ultrasonic 
@@ -33,20 +39,18 @@ char endMarker = '>';
 char delim[] = ",";
 
 void setup() {
-  Serial.begin(9600);
+  portOne.begin(9600);
   nh.initNode();
   nh.advertise(ultrasonic);
-  nh.subscribe(pwm);
-  //Serial.begin("Hk");
+  nh.subscribe(pwm_sub);
 
 }
 
 void loop() {
-  //motor_control();
+  motor_control();
   get_data();
   if (newData == true) {
     parseData();
-    //showData();
     newData = false;
     something_to_publish = true;
   }
@@ -59,18 +63,42 @@ void loop() {
   delay(10);
 }
 
-void motor_control(){
-  Serial.print("PWM1: ");
-  Serial.println(pwm1);
+void motor_control() {
+  if (mode == "standstill") {
+    digitalWrite(forward_pin,LOW);
+    digitalWrite(reverse_pin,LOW);
+
+    // Adding a delay before changing direction
+    if (prev_mode != mode) {
+      delay(500);
+    }
+  }
+  else if (mode == "forward") {
+    digitalWrite(forward_pin,HIGH);
+    digitalWrite(reverse_pin,LOW);
+  }
+  else if (mode == "reverse") {
+    digitalWrite(forward_pin,LOW);
+    digitalWrite(reverse_pin,HIGH);
+  }
+  else {
+    digitalWrite(forward_pin,LOW);
+    digitalWrite(reverse_pin,LOW);
+  }
+  analogWrite(pwm_pin,pwm);
+  prev_mode = mode;
+  
 }
+
+
 
 void get_data() {
   static boolean receiving_in_progress = false;
   int idx = 0;
   char rc;
 
-  while (Serial.available() > 0 && newData == false) {
-    rc = Serial.read();
+  while (portOne.available() > 0 && newData == false) {
+    rc = portOne.read();
 
     if (receiving_in_progress == true) {
       if (rc != endMarker) {
@@ -106,20 +134,6 @@ void parseData() {
 }
 
 void publish_data() {
-  ultra_msgs.data = recieved_distanace;
-  ultra_msgs.data_length = 5;
+  ultra_msgs.sensor1 = recieved_distanace[0];
   ultrasonic.publish( &ultra_msgs);
-}
-
-void showData() {
-  Serial.print("Distance 1: ");
-  Serial.println(recieved_distanace[0]);
-  Serial.print("Distance 2: ");
-  Serial.println(recieved_distanace[1]);
-  Serial.print("Distance 3: ");
-  Serial.println(recieved_distanace[2]);
-  Serial.print("Distance 4: ");
-  Serial.println(recieved_distanace[3]);
-  Serial.print("Distance 5: ");
-  Serial.println(recieved_distanace[4]);
 }
