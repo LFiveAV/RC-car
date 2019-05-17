@@ -5,32 +5,35 @@ import rospy
 
 from Adafruit_PCA9685 import PCA9685
 from Servo import ServoMotor
-from custom_messages.msg import dc_pwm #change custom_messages
+from drive_rc_car.msg import dc_pwm
+from drive_rc_car.msg import TwoFloat32
 
 #from DC_Motor import DC_Motor
 from std_msgs.msg import Int8
 
-#from std_msgs.msg import String
+from std_msgs.msg import String
+
+MIN_PWM = 0
+MAX_PWM = 1023
 
 class VehicleControl(object):
     def __init__(self):
         rospy.init_node('vehicle_controller')
         self.dc_pwm_pub = rospy.Publisher('dc_pwm',dc_pwm,queue_size=2)
         self.pca = self._get_pca()
-        self.servo = ServoMotor(pca)
+        self.servo = ServoMotor(self.pca)
 
         self.mode = 'standstill'
 
         self.pwm = 0
+        self.steering_pwm = 0
 
-        self.loop_rate = rospy.Rate(10)
 
 
     def start(self):
-        while not rospy.is_shutdown():
-            self.emergency_listener()
-            self.remote_controller_listener()
-            self.loop_rate.sleep()
+        self.emergency_listener()
+        self.remote_controller_listener()
+        rospy.spin()
 
     def emergency_callback(data):
         self.pwm = 0
@@ -38,20 +41,21 @@ class VehicleControl(object):
         self.publish_dc_pwm()
 
     def emergency_listener(self):
-        rospy.Subscriber("emergency_stop", String, emergency_callback)
+        rospy.Subscriber("emergency_stop", String, self.emergency_callback)
 
     def remote_controller_listener(self):
-        rospy.Subscriber("remote",TwoFloat32,remote_controller_callback)
+        rospy.Subscriber("remote",TwoFloat32,self.remote_controller_callback)
 
     def _get_pca(self):
+        pwm_freq = 324 # FIX THIS
         pca = PCA9685(busnum=1)            # check which bus that is used
         pca.set_pwm_freq(pwm_freq)
         print(pca)
         return pca
 
     def remote_controller_callback(self,data):
-        speed_inc = data.data[0]
-        steering_inc = data.data[0]
+        speed_inc = data.data1
+        steering_inc = data.data2
         if speed_inc != 0:
             self.set_pwm(speed_inc)
         elif steering_inc != 0:
@@ -102,12 +106,13 @@ class VehicleControl(object):
         msg = dc_pwm()
         msg.pwm = self.pwm
         msg.mode = self.mode
-        self.dc_pwm_pub(msg)
+        self.dc_pwm_pub.publish(msg)
+        print self.mode,self.pwm
 
     def set_steering(self,inc):
-        steering_pwm = inc + self.servo.get_current_pwm()
-        self.servo.set_pwm(steering_pwm)
-        print(steering_pwm)
+        self.steering_pwm = inc + self.servo.get_current_pwm()
+        self.servo.set_pwm(self.steering_pwm)
+        print(self.steering_pwm)
 
 
 if __name__ == '__main__':

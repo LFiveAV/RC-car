@@ -12,7 +12,7 @@ import curses
 #from std_msgs.msg import Float32
 #from std_msgs.msg import Int8
 from std_msgs.msg import String
-from std_msgs.msg import Float32MultiArray as TwoFloat32
+from drive_rc_car.msg import TwoFloat32
 
 
 class RemoteController(object):
@@ -52,20 +52,19 @@ class RemoteController(object):
         while not rospy.is_shutdown():
             drive_command = screen.getch()
             msg = TwoFloat32()
-            msg = [0,0]
 
             if self.control_mode == "pwm mode":
                 if drive_command == 32:    # for emergency stop: hit space
                     self.emergency_stop()
                     print("stop!")
                 elif drive_command == curses.KEY_UP:
-                    msg[0] = self.speed_inc
+                    msg.data1 = self.speed_inc
                 elif drive_command == curses.KEY_DOWN:
-                    msg[0] = -self.speed_inc
+                    msg.data1 = -self.speed_inc
                 elif drive_command == curses.KEY_LEFT:
-                    msg[1] = self.angle_inc
+                    msg.data2 = self.angle_inc
                 elif drive_command == curses.KEY_RIGHT:
-                    msg[1] = -self.angle_inc
+                    msg.data2 = -self.angle_inc
 
             elif self.control_mode == "metric mode":
                 if drive_command == 32:    # for emergency stop: hit space
@@ -85,7 +84,7 @@ class RemoteController(object):
                     self.steering = self.steering - self.angle_inc
                     self.pub_steering.publish(self.steering)
 
-            self.remote_pub(msg)
+            self.remote_pub.publish(msg)
 
             if drive_command == ord(self.self_drive_key):
                 self.mode_pub('self_drive')
