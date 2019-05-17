@@ -5,23 +5,23 @@ import rospy
 
 from Adafruit_PCA9685 import PCA9685
 from Servo import ServoMotor
-from std_msgs.msg import Float32MultiArray as TwoFloat32
+from custom_messages.msg import dc_pwm #change custom_messages
 
 #from DC_Motor import DC_Motor
-#from std_msgs.msg import Int8
+from std_msgs.msg import Int8
+
 #from std_msgs.msg import String
 
 class VehicleControl(object):
     def __init__(self):
         rospy.init_node('vehicle_controller')
-        self.dc_pwm_pub = rospy.Publisher('dc_pwm',TwoFloat32,queue_size=2)
+        self.dc_pwm_pub = rospy.Publisher('dc_pwm',dc_pwm,queue_size=2)
         self.pca = self._get_pca()
         self.servo = ServoMotor(pca)
 
         self.mode = 'standstill'
 
-        self.pwm1 = 0
-        self.pwm2 = 0
+        self.pwm = 0
 
         self.loop_rate = rospy.Rate(10)
 
@@ -33,8 +33,8 @@ class VehicleControl(object):
             self.loop_rate.sleep()
 
     def emergency_callback(data):
-        self.pwm1 = 0
-        self.pwm2 = 0
+        self.pwm = 0
+        self.mode = 'standstill'
         self.publish_dc_pwm()
 
     def emergency_listener(self):
@@ -71,41 +71,40 @@ class VehicleControl(object):
         if self.mode == 'standstill':
             if inc > 0:
                 self.mode = 'forward'
-                self.pwm1 += inc
+                self.pwm += inc
             elif inc < 0:
                 self.mode = 'reverse'
-                self.pwm2 += -1*inc
+                self.pwm += -1*inc
 
         elif self.mode == 'forward':
             if inc > 0:
-                self.pwm1 += inc
+                self.pwm += inc
             elif inc < 0:
-                self.pwm1 += inc
-                if self.pwm1 <= 0:
+                self.pwm += inc
+                if self.pwm <= 0:
                     self.mode = 'standstill'
-                    self.pwm1 = 0
+                    self.pwm = 0
 
         elif self.mode == 'reverse':
             if inc < 0:
-                self.pwm2 += -1*inc
+                self.pwm += -1*inc
             elif inc > 0:
-                self.pwm2 += -1*inc
-                if self.pwm2 <= 0:
+                self.pwm += -1*inc
+                if self.pwm <= 0:
                     self.mode = 'standstill'
-                    self.pwm2 = 0
+                    self.pwm = 0
 
-        self.pwm1 = self.max_min_pwm(self.pwm1)
-        self.pwm2 = self.max_min_pwm(self.pwm2)
+        self.pwm = self.max_min_pwm(self.pwm)
 
         self.publish_dc_pwm()
 
     def publish_dc_pwm(self):
-        msg = TwoFloat32()
-        msg.data = [self.pwm1,self.pwm2]
+        msg = dc_pwm()
+        msg.pwm = self.pwm
+        msg.mode = self.mode
         self.dc_pwm_pub(msg)
 
     def set_steering(self,inc):
-        # TODO: fixes :)
         steering_pwm = inc + self.servo.get_current_pwm()
         self.servo.set_pwm(steering_pwm)
         print(steering_pwm)
