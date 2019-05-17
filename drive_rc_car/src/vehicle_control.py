@@ -7,10 +7,7 @@ from Adafruit_PCA9685 import PCA9685
 from Servo import ServoMotor
 from drive_rc_car.msg import dc_pwm
 from drive_rc_car.msg import TwoFloat32
-
-#from DC_Motor import DC_Motor
 from std_msgs.msg import Int8
-
 from std_msgs.msg import String
 
 MIN_PWM = 0
@@ -26,7 +23,6 @@ class VehicleControl(object):
         self.mode = 'standstill'
 
         self.pwm = 0
-        self.steering_pwm = 0
 
 
 
@@ -47,7 +43,7 @@ class VehicleControl(object):
         rospy.Subscriber("remote",TwoFloat32,self.remote_controller_callback)
 
     def _get_pca(self):
-        pwm_freq = 324 # FIX THIS
+        pwm_freq = 50
         pca = PCA9685(busnum=1)            # check which bus that is used
         pca.set_pwm_freq(pwm_freq)
         print(pca)
@@ -59,7 +55,7 @@ class VehicleControl(object):
         if speed_inc != 0:
             self.set_pwm(speed_inc)
         elif steering_inc != 0:
-            self.set_steering(steering_pwm)
+            self.set_steering(steering_inc)
 
         #speed_thread = threading.Thread(name='speed',target=self.set_pwm,args=(speed_inc,))
         #steering_thread = threading.Thread(name='steering',target=self.set_steering, args=(steering_inc,))
@@ -110,9 +106,9 @@ class VehicleControl(object):
         print self.mode,self.pwm
 
     def set_steering(self,inc):
-        self.steering_pwm = inc + self.servo.get_current_pwm()
-        self.servo.set_pwm(self.steering_pwm)
-        print(self.steering_pwm)
+        steering_pwm = inc + self.servo.get_current_pwm()
+        self.servo.set_pwm(steering_pwm)
+        print(steering_pwm)
 
 
 if __name__ == '__main__':
