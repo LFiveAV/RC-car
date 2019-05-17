@@ -35,7 +35,7 @@ class VehicleControl(object):
         self.remote_controller_listener()
         rospy.spin()
 
-    def emergency_callback(data):
+    def emergency_callback(self,data):
         self.pwm = 0
         self.mode = 'standstill'
         self.publish_dc_pwm()
