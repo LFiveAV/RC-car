@@ -35,7 +35,6 @@ class Ultrasonic(object):
 
         # end
         self.safetycheck(data)
-        self.mode = 'standstill'
 
     def safetycheck(self,data):
         # Something with safety check for the ultrasonic sensors will be added here
