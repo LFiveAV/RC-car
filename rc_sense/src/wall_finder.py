@@ -40,9 +40,9 @@ class DistanceFinder(object):
 
     def lidar_callback(self,laser_data):
         right_thread = threading.Thread(name='right',target=self.get_distance,
-                                        args=(THETA_RIGHT, laser_data,'right'))
+                                        args=(THETA_RIGHT, laser_data,'right',))
         right_thread = threading.Thread(name='left',target=self.get_distance,
-                                        args=(THETA_LEFT, laser_data, 'left'))
+                                        args=(THETA_LEFT, laser_data, 'left',))
         right_thread.start()
         left_thread.start()
         right_thread.join(0.5)
