@@ -16,7 +16,7 @@ class DistanceFinder(object):
     def __init__(self):
         rospy.init_node('lidar_wall_distance_finder', anonymous=True)
         print('[Node] distance_finder started')
-        self.dist_pub = rospy.Publisher("liadr_wall_distance",Point,queue_size=3)
+        self.dist_pub = rospy.Publisher("lidar_wall_distance",Point,queue_size=3)
         self.left = -1
         self.right = -1
 
