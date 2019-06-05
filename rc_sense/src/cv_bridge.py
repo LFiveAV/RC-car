@@ -2,10 +2,13 @@
 
 import rospy
 import numpy as np
+from custom_messages.msg import Image
+
 
 
 class CvBridge(object):
-    def cv2msg(self,frame):
+    def cv2_to_imgmsg(self,frame):
+        imgmsg = Image()
         msg = [-1]
         for i in frame.shape:
             msg.append(i)
@@ -13,10 +16,11 @@ class CvBridge(object):
         size = np.prod(msg[1:])
         frame_reshaped = frame.reshape((1,size))
         msg += frame_reshaped[0].tolist()
-        return msg
-        
+        imgmsg.data = msg
+        return imgmsg
 
-    def msg2cv(self,msg):
+
+    def imgmsg_to_cv2(self,msg):
         size = msg.pop(0)
         frame_dim = []
         for __ in range(size):
@@ -24,6 +28,3 @@ class CvBridge(object):
         frame = np.asarray(msg)
         frame = frame.reshape(frame_dim)
         return frame
-
-
-
