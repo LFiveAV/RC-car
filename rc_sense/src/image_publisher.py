@@ -43,7 +43,7 @@ class ImagePublisher(object):
 
 
 if __name__ == '__main__':
-    rospy.init_node('image_publsiher_node', anonymous=True)
+    rospy.init_node('image_publisher_node', anonymous=True)
     ip = ImagePublisher()
     ip.start()
     ip.camera.release()
