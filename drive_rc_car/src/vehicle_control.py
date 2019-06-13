@@ -3,9 +3,7 @@
 
 import rospy
 
-from Adafruit_PCA9685 import PCA9685
-from Servo import ServoMotor
-from drive_rc_car.msg import dc_pwm
+from drive_rc_car.msg import control
 from drive_rc_car.msg import TwoFloat32
 from std_msgs.msg import Int8
 from std_msgs.msg import String
@@ -15,14 +13,12 @@ MAX_PWM = 1023
 
 class VehicleControl(object):
     def __init__(self):
-        rospy.init_node('vehicle_controller')
-        self.dc_pwm_pub = rospy.Publisher('dc_pwm',dc_pwm,queue_size=2)
-        self.pca = self._get_pca()
-        self.servo = ServoMotor(self.pca)
+        self.dc_pwm_pub = rospy.Publisher('pwm_node',control,queue_size=2)
 
         self.mode = 'standstill'
 
         self.pwm = 0
+        self.servo_pwm = 100
 
 
 
@@ -42,13 +38,6 @@ class VehicleControl(object):
     def remote_controller_listener(self):
         rospy.Subscriber("remote",TwoFloat32,self.remote_controller_callback)
 
-    def _get_pca(self):
-        pwm_freq = 50
-        pca = PCA9685(busnum=1)            # check which bus that is used
-        pca.set_pwm_freq(pwm_freq)
-        print(pca)
-        return pca
-
     def remote_controller_callback(self,data):
         speed_inc = data.data1
         steering_inc = data.data2
@@ -56,6 +45,7 @@ class VehicleControl(object):
             self.set_pwm(speed_inc)
         elif steering_inc != 0:
             self.set_steering(steering_inc)
+        self.publish_pwm()
 
         #speed_thread = threading.Thread(name='speed',target=self.set_pwm,args=(speed_inc,))
         #steering_thread = threading.Thread(name='steering',target=self.set_steering, args=(steering_inc,))
@@ -96,21 +86,23 @@ class VehicleControl(object):
 
         self.pwm = self.max_min_pwm(self.pwm)
 
-        self.publish_dc_pwm()
 
-    def publish_dc_pwm(self):
-        msg = dc_pwm()
-        msg.pwm = self.pwm
+
+    def publish_pwm(self):
+        msg = control()
+        msg.motor_pwm = self.pwm
         msg.mode = self.mode
+        msg.servo_pwm = self.steering_pwm
         self.dc_pwm_pub.publish(msg)
-        print self.mode,self.pwm
+        print self.mode,self.pwm,self.steering_pwm
 
     def set_steering(self,inc):
-        steering_pwm = inc + self.servo.get_current_pwm()
-        self.servo.set_pwm(steering_pwm)
-        print(steering_pwm)
+        self.steering_pwm += inc
+
+
 
 
 if __name__ == '__main__':
+    rospy.init_node('vehicle_controller')
     vc = VehicleControl()
     vc.start()
