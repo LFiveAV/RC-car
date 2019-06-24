@@ -13,4 +13,8 @@
   <node name = "imu_data_publisher"	pkg="rc_sense"	type="imu_publisher.py" />
 
   <node name = "imu_speed_publisher"	pkg="rc_sense"	type="imu_speed.py" />
+
+<node name = "wall_follower"	pkg="drive_rc_car"	type="WallFollower.py" />
+
+<node name = "distance_finder"	pkg="rc_sense"	type="distance_finder.py" />
 </launch>
