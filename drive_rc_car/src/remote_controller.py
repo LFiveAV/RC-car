@@ -9,29 +9,30 @@ Created on Wed May 23 09:35:10 2018
 import rospy
 import curses
 
-#from std_msgs.msg import Float32
-#from std_msgs.msg import Int8
+from std_msgs.msg import Float32
+from std_msgs.msg import Int8
 from std_msgs.msg import String
-from drive_rc_car.msg import TwoFloat32
 
+
+SELF_DRIVE_BUTTON = 'a'
+MANUAL_DRIVE_BUTTON = 'm'
 
 class RemoteController(object):
     def __init__(self, control_mode="pwm mode"):
+        self.mode = control_mode
         self.emergency_pub = rospy.Publisher('emergency_stop', String, queue_size=3)
-        self.mode_pub = rospy.Publisher('mode',String,queue_size=2)
-        self.control_mode = control_mode
-        self.self_drive_key = 'a'
-        self.remote_drive_key = 'm'
 
-        if self.control_mode == "pwm mode":
-            self.remote_pub = rospy.Publisher('remote', TwoFloat32, queue_size=2)
+
+        if self.mode == "pwm mode":
+            self.pub_steering = rospy.Publisher('steering_pwm', Int8, queue_size=2)
+            self.pub_speed = rospy.Publisher('speed_pwm', Int8, queue_size=2)
+            self.mode_pub = rospy.Publisher('mode',String,queue_size=2)
             self.speed_inc = 2
             self.angle_inc = 2
             self.speed = 0
             self.steering = 0
 
-
-        elif self.control_mode == "metric mode":
+        elif self.mode == "metric mode":
             self.pub_steering = rospy.Publisher('steering_command', Float32, queue_size=2)
             self.pub_speed = rospy.Publisher('speed_command', Float32, queue_size=2)
             self.speed_inc = 0.20
@@ -51,22 +52,27 @@ class RemoteController(object):
 
         while not rospy.is_shutdown():
             drive_command = screen.getch()
-            msg = TwoFloat32()
 
-            if self.control_mode == "pwm mode":
+            if self.mode == "pwm mode":
                 if drive_command == 32:    # for emergency stop: hit space
                     self.emergency_stop()
                     print("stop!")
+                elif drive_command == ord(SELF_DRIVE_BUTTON):
+                    self.mode_pub.publish('self_drive')
+                    print("self drive")
+                elif drive_command == ord(MANUAL_DRIVE_BUTTON):
+                    self.mode_pub.publish('remote')
+                    print("remote")
                 elif drive_command == curses.KEY_UP:
-                    msg.data1 = self.speed_inc
+                    self.pub_speed.publish(self.speed_inc)
                 elif drive_command == curses.KEY_DOWN:
-                    msg.data1 = -self.speed_inc
+                    self.pub_speed.publish(-self.speed_inc)
                 elif drive_command == curses.KEY_LEFT:
-                    msg.data2 = self.angle_inc
+                    self.pub_steering.publish(self.angle_inc)
                 elif drive_command == curses.KEY_RIGHT:
-                    msg.data2 = -self.angle_inc
+                    self.pub_steering.publish(-self.angle_inc)
 
-            elif self.control_mode == "metric mode":
+            elif self.mode == "metric mode":
                 if drive_command == 32:    # for emergency stop: hit space
                     self.speed = 0
                     self.emergency_stop()
@@ -83,13 +89,6 @@ class RemoteController(object):
                 elif drive_command == curses.KEY_RIGHT:
                     self.steering = self.steering - self.angle_inc
                     self.pub_steering.publish(self.steering)
-
-            self.remote_pub.publish(msg)
-
-            if drive_command == ord(self.self_drive_key):
-                self.mode_pub('self_drive')
-            elif drive_command == ord(self.remote_drive_key):
-                self.mode_pub('remote')
 
         curses.nocbreak(); screen.keypad(0); curses.echo()
         curses.endwin()

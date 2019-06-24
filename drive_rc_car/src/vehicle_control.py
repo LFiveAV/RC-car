@@ -13,7 +13,7 @@ MAX_PWM = 1023
 
 class VehicleControl(object):
     def __init__(self):
-        self.dc_pwm_pub = rospy.Publisher('pwm_node',control,queue_size=2)
+        self.pwm_pub = rospy.Publisher('pwm_node',control,queue_size=2)
 
         self.mode = 'standstill'
 
@@ -30,13 +30,13 @@ class VehicleControl(object):
     def emergency_callback(self,data):
         self.pwm = 0
         self.mode = 'standstill'
-        self.publish_dc_pwm()
+        self.publish_pwm()
 
     def emergency_listener(self):
         rospy.Subscriber("emergency_stop", String, self.emergency_callback)
 
     def remote_controller_listener(self):
-        rospy.Subscriber("remote",TwoFloat32,self.remote_controller_callback)
+        rospy.Subscriber("control_input",TwoFloat32,self.remote_controller_callback)
 
     def remote_controller_callback(self,data):
         speed_inc = data.data1
@@ -92,12 +92,13 @@ class VehicleControl(object):
         msg = control()
         msg.motor_pwm = self.pwm
         msg.mode = self.mode
-        msg.servo_pwm = self.steering_pwm
-        self.dc_pwm_pub.publish(msg)
-        print self.mode,self.pwm,self.steering_pwm
+        msg.servo_pwm = self.servo_pwm
+        self.pwm_pub.publish(msg)
+        print self.mode,self.pwm,self.servo_pwm
 
     def set_steering(self,inc):
-        self.steering_pwm += inc
+        self.servo_pwm += inc
+        self.servo_pwm = max(55,min(self.servo_pwm,145))
 
 
 
